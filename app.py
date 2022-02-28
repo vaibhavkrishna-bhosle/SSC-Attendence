@@ -21,8 +21,11 @@ master_list = {1: "Vaibhavkrishna Bhosle",
                 12: "Kannada Mam",
                 13: "Dattu Sir",
                 14: "Sandeep Sir",
+                15: "Veerendra J",
                 16: "Pandit Sir",
-                17: "Vishwanath Sir"}
+                17: "Vishwanath Sir",
+                18: "Pavan Sir",
+                19: "Raheem Sir"}
 
 def filter(start_date,end_date,emp_id,df):
     after_start_date = df["date"] >= pd.to_datetime(start_date)
@@ -47,7 +50,7 @@ def filter(start_date,end_date,emp_id,df):
     return final
 
 file = st.file_uploader("Upload", type={"dat"})
-option = st.selectbox("Select Employee",("Vaibhavkrishna Bhosle", "Shivaji Bhosle","Suvarna Bhosle","Shreekant","Shivappa","Maheshwari Biradar","Suvarna A","Sachin","Jameer Sir","Vijaylaxmi Mam","Suryakant Sir","Kannada Mam","Dattu Sir","Sandeep Sir","Pandit Sir","Vishwanath Sir"))
+option = st.selectbox("Select Employee",("Vaibhavkrishna Bhosle", "Shivaji Bhosle","Suvarna Bhosle","Shreekant","Shivappa","Maheshwari Biradar","Suvarna A","Sachin","Jameer Sir","Vijaylaxmi Mam","Suryakant Sir","Kannada Mam","Dattu Sir","Sandeep Sir","Veerendra J","Pandit Sir","Vishwanath Sir","Pavan Sir","Raheem Sir"))
 st.write("You Selected: ", option)
 
 for key,value in master_list.items():
