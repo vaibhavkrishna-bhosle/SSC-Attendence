@@ -1,12 +1,7 @@
 import streamlit as st
 import pandas as pd
+from datetime import timedelta
 
-entry = 0
-exit = 1
-morning_time = pd.to_timedelta("10:00:00")
-late_morning_time = pd.to_timedelta("12:00:00")
-evening_time = pd.to_timedelta("18:00:00")
-early_evening = pd.to_timedelta("15:00:00")
 master_list = {1: "Vaibhavkrishna Bhosle",
                 2: "Shivaji Bhosle",
                 3: "Suvarna Bhosle",
@@ -35,19 +30,10 @@ def filter(start_date,end_date,emp_id,df):
     filtered_dates=filtered_dates.reset_index()
     filtered_dates = filtered_dates.drop(["index"],axis=1)
 
-    for key, value in filtered_dates.iterrows():
-        if value[3] > early_evening:
-            filtered_dates.iloc[key,1] = 1
-    
-    emp_attendence_morning = filtered_dates.loc[(filtered_dates["emp_id"] == emp_id) & (filtered_dates["in_out"] == entry)].drop_duplicates()
-    emp_attendence_evening = filtered_dates.loc[(filtered_dates["emp_id"] == emp_id) & (filtered_dates["in_out"] == exit)].drop_duplicates()
-
-    final = pd.merge(emp_attendence_morning,emp_attendence_evening,on="date",how='outer')
-    final["duration"] = final["time_y"] - final["time_x"]
-    final = final[final["emp_id_x"] == final.iloc[0,0]]
-    final = final.drop(["emp_id_x","in_out_x","emp_id_y","in_out_y",],axis=1)
-
-    return final
+    filtered_dates = filtered_dates[filtered_dates["emp_id"] == emp_id]
+    filtered_dates = filtered_dates.reset_index()
+    filtered_dates = filtered_dates.drop(["index","emp_id"],axis=1)
+    return filtered_dates
 
 file = st.file_uploader("Upload", type={"dat"})
 option = st.selectbox("Select Employee",("Vaibhavkrishna Bhosle", "Shivaji Bhosle","Suvarna Bhosle","Shreekant","Shivappa","Maheshwari Biradar","Suvarna A","Sachin","Jameer Sir","Vijaylaxmi Mam","Suryakant Sir","Kannada Mam","Dattu Sir","Sandeep Sir","Veerendra J","Pandit Sir","Vishwanath Sir","Pavan Sir","Raheem Sir"))
@@ -63,36 +49,78 @@ if file is not None:
     df = pd.read_csv(file , sep="\t",header=None)
     df.columns = ["emp_id","Date_Time","fingure","in_out","junk","junk_"]
     df1 = df.Date_Time.str.split(expand=True)
+    
     df["date"] = pd.to_datetime(df1[0])
-    format_str = '%H:%M:%S'
     df["time"] = pd.to_timedelta(df1[1])
+    
     df = df.drop(["Date_Time","fingure","junk","junk_"],axis=1)
 
 start_date = st.text_input("Start Date: ", "yyyy-mm-dd")
 end_date = st.text_input("End Date: ", "yyyy-mm-dd")
 
 if st.button("Run"):
-    sudo = filter(start_date,end_date,emp_id,df)
-    sudo = sudo.loc[sudo["duration"].notnull()]
-    sudo["date"] = sudo.date.apply(str)
+    monthly_df = pd.DataFrame()
+    filtered_dates = filter(start_date,end_date,emp_id,df)
+    date_att = pd.to_datetime(filtered_dates["date"].unique()).strftime("%Y-%m-%d").tolist()
+    date_cur = []
+    in_time = []
+    out_time = []
+    on_break = []
+    on_floor = []
+
+    for dates in date_att:
+        on_floor_time = timedelta()
+        on_break_time = timedelta()
+
+
+        temp = filtered_dates[filtered_dates["date"] == dates]
+        temp = temp.reindex()
+
+        if (temp.size/3) % 2 == 0:
+            for i in range(0,int(temp.size/3),1):
+                if i % 2 == 0:
+                    temp["in_out"][i] = 0
+                else:
+                    temp["in_out"][i] = 1
+            for i in range(1,int(temp.size/3)):
+                if i % 2 == 1:
+                    on_floor_time =on_floor_time + (temp["time"].iloc[i] - temp["time"].iloc[i-1])
+                else:
+                    on_break_time =on_break_time + (temp["time"].iloc[i] - temp["time"].iloc[i-1])
+
+            date_cur.append(dates)
+            in_time.append(min(temp["time"]))
+            out_time.append(max(temp["time"]))
+            on_floor.append(on_floor_time)
+            on_break.append(on_break_time)
+            print("Inserted")
+        else:
+            st.write("Error in data for date"+str(dates))
+            date_cur.append(dates)
+            in_time.append(min(temp["time"]))
+            out_time.append(max(temp["time"]))
+            on_floor.append(on_floor_time)
+            on_break.append(on_break_time)
+
+
+    monthly_df["Date"] = date_cur
+    monthly_df["In Time"] =  in_time 
+    monthly_df["Out Time"] = out_time
+    monthly_df["On Floor"] = on_floor
+    monthly_df["On Break"] = on_break
+
+    cols = monthly_df.columns
+    monthly_df[cols[0]] = monthly_df[cols[0]]
+    monthly_df[cols[1]] = monthly_df[cols[1]].astype(str).str[7:]
+    monthly_df[cols[2]] = monthly_df[cols[2]].astype(str).str[7:]
+    monthly_df[cols[3]] = monthly_df[cols[3]].astype(str).str[7:]
+    monthly_df[cols[4]] = monthly_df[cols[4]].astype(str).str[7:]
     
-    sudo["time_x"] = sudo["time_x"].apply(str)
-    in_time = sudo.time_x.str.split(expand = True)
-    sudo["In Time"] = in_time[2]
-
-    sudo["time_y"] = sudo["time_y"].apply(str)
-    out_time = sudo.time_y.str.split(expand = True)
-    sudo["Out Time"] = out_time[2]
-    
-    sudo["duration"] =sudo.duration.apply(str)
-    time_only = sudo.duration.str.split(expand=True)
-    sudo["Total Duration"] = time_only[2]
-
-    final = sudo.drop(["duration","time_x","time_y"],axis=1)
-    #print(final)
-    st.write(final)
-
-    st.write("Total Number of Days Present: "+str(final.count()[0]))
+    #st.table(monthly_df)
+    print("End of process")
+    print(monthly_df)
+    st.write(monthly_df)
+    st.write("Total Number of Days Present: "+str(monthly_df.count()[0]))
 
 else :
     st.write("Nothing to process")
