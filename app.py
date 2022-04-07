@@ -108,6 +108,7 @@ if st.button("Run"):
     monthly_df["Out Time"] = out_time
     monthly_df["On Floor"] = on_floor
     monthly_df["On Break"] = on_break
+    monthly_df["Total on Campus"] = on_floor+on_break
 
     cols = monthly_df.columns
     monthly_df[cols[0]] = monthly_df[cols[0]]
@@ -115,6 +116,7 @@ if st.button("Run"):
     monthly_df[cols[2]] = monthly_df[cols[2]].astype(str).str[7:]
     monthly_df[cols[3]] = monthly_df[cols[3]].astype(str).str[7:]
     monthly_df[cols[4]] = monthly_df[cols[4]].astype(str).str[7:]
+    monthly_df[cols[5]] = monthly_df[cols[5]].astype(str).str[7:]
     
     #st.table(monthly_df)
     print("End of process")
